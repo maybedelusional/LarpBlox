@@ -10,20 +10,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [catalogRes, thumbRes] = await Promise.all([
-      fetch(`https://catalog.roblox.com/v1/catalog/items/details`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: [{ itemType: "Asset", id: Number(id) }] })
+    const [infoRes, thumbRes] = await Promise.all([
+      fetch(`https://www.roblox.com/marketplace/productinfo?assetId=${id}`, {
+        headers: { "User-Agent": "Mozilla/5.0" }
       }),
-      fetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`)
+      fetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`, {
+        headers: { "User-Agent": "Mozilla/5.0" }
+      })
     ]);
 
-    const catalogJson = await catalogRes.json();
-    const thumbJson = await thumbRes.json();
+    const info = await infoRes.json();
+    const thumb = await thumbRes.json();
 
-    const name = catalogJson?.data?.[0]?.name || null;
-    const imageUrl = thumbJson?.data?.[0]?.imageUrl || null;
+    const name = info.Name || null;
+    const imageUrl = thumb?.data?.[0]?.imageUrl || null;
 
     res.status(200).json({ id, name, imageUrl });
   } catch (e) {
