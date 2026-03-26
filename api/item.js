@@ -17,16 +17,17 @@ export default async function handler(req, res) {
   try {
     // Fetch catalog page HTML + thumbnail in parallel
     const [pageRes, thumbRes] = await Promise.all([
-      fetch(`https://www.roblox.com/catalog/${id}/--`, { headers }),
+      fetch(`https://www.roblox.com/catalog/${id}/x`, { headers }),
       fetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`, { headers })
     ]);
 
     const html = await pageRes.text();
     const thumb = await thumbRes.json();
 
-    // Extract name from <title>Dominus Empyreus - Roblox</title>
-    const titleMatch = html.match(/<title>(.+?)\s*[-|]\s*Roblox<\/title>/i);
-    const name = titleMatch ? titleMatch[1].trim() : null;
+    // Extract name from og:title meta tag — more reliable than <title>
+    const ogMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i)
+                 || html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i);
+    const name = ogMatch ? ogMatch[1].trim() : null;
 
     const imageUrl = thumb?.data?.[0]?.imageUrl || null;
 
