@@ -9,20 +9,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Invalid ID" });
   }
 
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/json,*/*",
+  };
+
   try {
-    const [infoRes, thumbRes] = await Promise.all([
-      fetch(`https://www.roblox.com/marketplace/productinfo?assetId=${id}`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      }),
-      fetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      })
+    // Fetch catalog page HTML + thumbnail in parallel
+    const [pageRes, thumbRes] = await Promise.all([
+      fetch(`https://www.roblox.com/catalog/${id}/--`, { headers }),
+      fetch(`https://thumbnails.roblox.com/v1/assets?assetIds=${id}&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false`, { headers })
     ]);
 
-    const info = await infoRes.json();
+    const html = await pageRes.text();
     const thumb = await thumbRes.json();
 
-    const name = info.Name || null;
+    // Extract name from <title>Dominus Empyreus - Roblox</title>
+    const titleMatch = html.match(/<title>(.+?)\s*[-|]\s*Roblox<\/title>/i);
+    const name = titleMatch ? titleMatch[1].trim() : null;
+
     const imageUrl = thumb?.data?.[0]?.imageUrl || null;
 
     res.status(200).json({ id, name, imageUrl });
